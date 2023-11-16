@@ -1,17 +1,25 @@
-name: Release Workflow
+name: Update Changelog
 
 on:
   release:
     types: [created]
 
 jobs:
-  release-job:
+  update-changelog:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Run Release Actions
+      - name: Update CHANGELOG.md
         run: |
-          echo "Release created: ${{ github.event.release.tag_name }}"
-          # Add additional commands here
+          RELEASE_NOTES=$(gh release view ${{ github.event.release.tag_name }} --json body -q .body)
+          echo -e "# Release ${{ github.event.release.tag_name }}\n\n$RELEASE_NOTES\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git add CHANGELOG.md
+          git commit -m "Update CHANGELOG.md for release ${{ github.event.release.tag_name }}"
+          git push
